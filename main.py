@@ -3,12 +3,41 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+# 1️⃣ Medir referencia en píxeles (haz clic en los extremos del objeto de 10 cm)
+def click_event(event, x, y, flags, params):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print(f"Coordenada: ({x}, {y})")
+        points.append((x, y))
+        if len(points) == 2:
+            cv2.line(frame, points[0], points[1], (255, 0, 0), 2)
+            cv2.imshow("Medir", frame)
+            dist = np.linalg.norm(np.array(points[0]) - np.array(points[1]))
+            print(f"Distancia en píxeles: {dist}")
+            # Calcula la escala y muestra
+            px_to_cm = 10 / dist
+            print(f"Escala calculada: {px_to_cm:.5f} cm/px")
+            params['px_to_cm'] = px_to_cm
 
-# 1 Cargar video y preparar detector
+# --- Medición de referencia ---
+cap = cv2.VideoCapture("oscilador_llaves - Made with Clipchamp.mp4")
+ret, frame = cap.read()
+points = []
+params = {}
+if ret:
+    cv2.imshow("Medir", frame)
+    cv2.setMouseCallback("Medir", click_event, params)
+    print("Haz clic en los dos extremos del objeto de 10 cm.")
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+cap.release()
 
+# Si no se midió, usa un valor por defecto
+px_to_cm = params.get('px_to_cm', 0.05)  # Cambia este valor si tienes otra referencia
+print("cm: ", px_to_cm)
+# 2️⃣ Trackeo
 cap = cv2.VideoCapture("oscilador_llaves - Made with Clipchamp.mp4")
 fps = cap.get(cv2.CAP_PROP_FPS)
-if fps == 0:   # fallback si no detecta bien
+if fps == 0:
     fps = 30
 dt = 1 / fps
 print("FPS detectado:", fps)
@@ -16,25 +45,20 @@ print("FPS detectado:", fps)
 object_detector = cv2.createBackgroundSubtractorMOG2(history=100, varThreshold=40)
 positions = []
 
-
-px_to_cm = 0.05  # Cambiar [cm/px] según la escala real del video
-
-
-# 2️ Trackeo
 while True:
     ret, frame = cap.read()
     if not ret:
         break
-    
+
     frame = cv2.resize(frame, (360, 640))  # esto cambia la escala
     roi = frame[200:500, 100:300]
-    
+
     gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray, (7, 7), 0)
     edges = cv2.Canny(blur, 50, 150)
-    
+
     contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+
     if contours:
         cnt = max(contours, key=cv2.contourArea)
         if cv2.contourArea(cnt) > 100:
@@ -42,11 +66,11 @@ while True:
             if M["m00"] != 0:
                 cx = int(M["m10"] / M["m00"])
                 cy = int(M["m01"] / M["m00"])
-                
+
                 cv2.circle(roi, (cx, cy), 5, (0, 0, 255), -1)
                 cv2.circle(roi, (cx, cy), 20, (255, 0, 0), 2)
                 cv2.drawContours(roi, [cnt], -1, (0, 255, 0), 2)
-                
+
                 positions.append((cx, cy))
 
     cv2.imshow("ROI", roi)
@@ -59,15 +83,12 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
 
-# 3️ Procesar posiciones
+# 3️⃣ Procesar posiciones
 positions = np.array(positions, dtype=float)
 
-#Evitar errores si no se detecta nada
 if positions.shape[0] == 0:
     print("No se detectaron posiciones. Verifica el video o los parámetros de detección.")
     exit()
-
-
 
 y_positions = positions[:, 1]  # solo componente vertical
 
@@ -82,7 +103,7 @@ y_positions = y_positions - y_equilibrium  # centrar en el equilibrio
 # Tiempo
 t = np.arange(len(positions)) * dt
 
-# 4️ Ajuste senoidal
+# 4️⃣ Ajuste senoidal
 def sine_wave(t, omega, phase):
     return A * np.cos(omega * t + phase)
 
@@ -94,12 +115,11 @@ y_theoretical = A * np.cos(omega * t + phase)
 v_theoretical = -A * omega * np.sin(omega * t + phase)
 a_theoretical = -A * omega**2 * np.cos(omega * t + phase)
 
-# 5️ Derivadas numéricas
+# 5️⃣ Derivadas numéricas
 v_numeric = np.gradient(y_positions, dt)      # cm/s
 a_numeric = np.gradient(v_numeric, dt)        # cm/s²
 
-
-# 6️ Gráficas
+# 6️⃣ Gráficas
 plt.figure(figsize=(12, 10))
 
 # Posición
@@ -131,9 +151,8 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-# 7️ Parámetros
+# 7️⃣ Parámetros
 print(f"Amplitud: {A:.2f} cm")
 print(f"Frecuencia angular ω: {omega:.2f} rad/s")
 print(f"Frecuencia f: {omega/(2*np.pi):.2f} Hz")
 print(f"Período T: {2*np.pi/omega:.2f} s")
-

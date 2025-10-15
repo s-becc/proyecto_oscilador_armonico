@@ -5,6 +5,7 @@ from scipy.optimize import curve_fit
 
 # 1️⃣ Medir referencia en píxeles (haz clic en los extremos del objeto de 10 cm)
 def click_event(event, x, y, flags, params):
+    global done
     if event == cv2.EVENT_LBUTTONDOWN:
         print(f"Coordenada: ({x}, {y})")
         points.append((x, y))
@@ -17,17 +18,23 @@ def click_event(event, x, y, flags, params):
             px_to_cm = 10 / dist
             print(f"Escala calculada: {px_to_cm:.5f} cm/px")
             params['px_to_cm'] = px_to_cm
+            done = True
+            cv2.destroyWindow("Medir")
 
 # --- Medición de referencia ---
 cap = cv2.VideoCapture("oscilador_llaves - Made with Clipchamp.mp4")
 ret, frame = cap.read()
 points = []
 params = {}
+done = False
 if ret:
     cv2.imshow("Medir", frame)
     cv2.setMouseCallback("Medir", click_event, params)
     print("Haz clic en los dos extremos del objeto de 10 cm.")
-    cv2.waitKey(0)
+    while not done:
+        key = cv2.waitKey(1)
+        if key == 27:  # ESC para cancelar
+            break
     cv2.destroyAllWindows()
 cap.release()
 

@@ -39,7 +39,7 @@ Se utiliza el módulo [https://docs.python.org/3/library/venv.html](venv) para c
 
 ## Descripción del Programa
 
-Este script realiza el análisis de un video de un oscilador armónico (por ejemplo, un llavero oscilando) para extraer parámetros físicos del movimiento. El flujo principal es:
+Este proyecto realiza el análisis de videos de osciladores armónicos para extraer parámetros físicos del movimiento. El programa está estructurado como un pipeline de procesamiento que se ejecuta automáticamente al correr `main.py`. El flujo principal incluye:
 
 1. **Medición de referencia:** El usuario selecciona dos puntos en el video que corresponden a una distancia conocida (10 cm). Esto permite calcular la escala de píxeles a centímetros.
 2. **Trackeo del objeto:** El programa detecta y sigue el objeto en movimiento en cada cuadro del video, extrayendo su posición vertical.
@@ -48,6 +48,22 @@ Este script realiza el análisis de un video de un oscilador armónico (por ejem
 5. **Cálculo de derivadas:** Calcula numéricamente la velocidad y aceleración.
 6. **Visualización:** Grafica posición, velocidad y aceleración observadas y teóricas.
 7. **Parámetros físicos:** Imprime la amplitud, frecuencia angular, frecuencia y período del movimiento.
+
+## Pipeline de Procesamiento
+
+El script principal `main.py` ejecuta un pipeline secuencial de módulos para procesar todos los videos en la carpeta `Videos/` y generar resultados organizados en la carpeta `Resultados/`. Los pasos del pipeline son:
+
+1. **ProcesarVideos.py:** Procesa cada video en la carpeta `Videos/`. Realiza la calibración de escala mediante selección manual de puntos de referencia, detecta y rastrea el objeto en movimiento usando visión por computadora (filtrado de color HSV y contornos), y guarda las posiciones cartesianas (X, Y) en archivos CSV en `Resultados/Posicion Cartesiana/Sin Filtrar/`.
+
+2. **ProcesarDatos.py:** Toma los datos de posiciones sin filtrar y aplica procesamiento:
+   - Filtra las posiciones usando el filtro Savitzky-Golay para suavizar el ruido.
+   - Calcula derivadas numéricas para obtener velocidad y aceleración cartesianas.
+   - Calcula aceleraciones intrínsecas (normal y tangencial).
+   - Genera archivos CSV filtrados y sin filtrar para posiciones, velocidades y aceleraciones en subcarpetas correspondientes dentro de `Resultados/`.
+
+3. **Graficador.py:** Genera visualizaciones interactivas usando Plotly para cada conjunto de datos filtrados. Crea gráficos HTML y PNG para componentes X e Y de posiciones, velocidades y aceleraciones, organizados en carpetas específicas dentro de `Resultados/`. Los gráficos incluyen datos filtrados y sin filtrar para comparación.
+
+4. **GenerarIndex.py:** Crea un índice HTML (`Resultados/index.html`) que organiza y enlaza todos los gráficos generados, categorizados por tipo (Posición Cartesiana, Velocidad Cartesiana, Aceleración Cartesiana, Aceleración Intrínseca). Abre automáticamente el índice en el navegador web para facilitar la navegación de los resultados.
 
 ## Uso del programa
 
@@ -58,7 +74,7 @@ Este script realiza el análisis de un video de un oscilador armónico (por ejem
     python main.py
     ```
 
-3. Al iniciar, se mostrará el primer cuadro del video. Haz clic en los dos extremos del objeto de referencia (10 cm) para calibrar la escala. Una vez seleccionados los dos puntos, la ventana se cerrará automáticamente.
+3. Al iniciar, se mostrará el primer cuadro del video. Haz clic en los dos extremos del objeto de referencia (10 cm) para calibrar la escala. Una vez seleccionados los dos puntos, la ventana se cerrará automáticamente, se procesará el video y se repetirá el proceso con cada uno de los videos que se encuentre en la carpeta [Videos](Videos).
 4. El programa comenzará a procesar el video automáticamente. Durante el procesamiento, se mostrarán tres ventanas: "ROI" (región de interés), "Video" (el video completo) y "Edges" (bordes detectados). Puedes presionar la tecla ESC en cualquier momento para detener el procesamiento anticipadamente, pero normalmente deja que termine solo.
 5. Una vez procesado el video, se mostrarán las gráficas de posición, velocidad y aceleración (observadas y teóricas).
 6. Al finalizar, se mostrarán los parámetros físicos calculados en la consola.

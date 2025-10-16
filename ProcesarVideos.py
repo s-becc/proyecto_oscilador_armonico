@@ -40,7 +40,8 @@ for v in videos:
         cv2.imshow("Medir", frame)
         cv2.setMouseCallback("Medir", click_event, params)
         print("Haz clic en los dos extremos del objeto de referencia.")
-        cv2.waitKey(0)
+        while len(points) < 2:
+            cv2.waitKey(1)
         cv2.destroyAllWindows()
     cap.release()
 

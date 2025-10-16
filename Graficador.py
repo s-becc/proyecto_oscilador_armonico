@@ -62,5 +62,3 @@ for ruta_csv in files:
     figy.write_image(os.path.join(dir_img, f"{nombre_base}.png"))
 
     print("  Finalizado")
-
-generar_index()

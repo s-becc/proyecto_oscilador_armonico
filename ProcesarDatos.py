@@ -29,7 +29,7 @@ carpeta_pos_filtrado = os.path.join(carpeta_posicion, "Filtrado")
 
 os.makedirs(carpeta_pos_filtrado, exist_ok=True)
 
-window_size = 4
+window_size = 3
 order = 2
 
 #Suavizar posición

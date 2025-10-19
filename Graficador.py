@@ -32,12 +32,22 @@ for ruta_csv in files:
     coly = dfFiltrado.columns[2]
 
     print(f"  Graficando {colx} y {coly}...")
+    dfFiltrado[tiempo] = pd.to_numeric(dfFiltrado[tiempo], errors='coerce')
+    dfSinFiltrar[tiempo] = pd.to_numeric(dfSinFiltrar[tiempo], errors='coerce')
+
     figx = px.line(dfFiltrado, x = tiempo, y = colx, title = f"{colx} en {nombre_base}(t)")
     figy = px.line(dfFiltrado, x = tiempo, y = coly, title = f"{coly} en {nombre_base}(t)")
-    
+
+    #Forzar eje X a comenzar en 0 si hay datos válidos
+    if dfFiltrado[tiempo].notna().any():
+        figx.update_layout(xaxis_range=[0, dfFiltrado[tiempo].max()])
+        figy.update_layout(xaxis_range=[0, dfFiltrado[tiempo].max()])
+
+
     print("  Agregando datos sin filtrar...")
     figx.add_trace(go.Scatter(x = dfSinFiltrar[tiempo], y = dfSinFiltrar[colx], mode = 'markers', name = 'Sin filtrar'))
     figy.add_trace(go.Scatter(x = dfSinFiltrar[tiempo], y = dfSinFiltrar[coly], mode = 'markers', name = 'Sin filtrar'))
+
 
     nombre_x = f"Graficos {colx}".split(" (", 1)[0]
     nombre_y = f"Graficos {coly}".split(" (", 1)[0]

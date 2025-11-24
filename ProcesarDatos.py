@@ -46,13 +46,13 @@ for archivo_csv in os.listdir(carpeta_pos_sin_filtrar):
             "Tiempo (s)": df["Tiempo (s)"]
         })
         
-        if len(df["PosX (cm)"] >= window_size):
-            df_aux["PosX (cm)"] = savgol_filter(df["PosX (cm)"], window_length=window_size, polyorder=order)
+        if len(df["PosX (m)"]) >= window_size:
+            df_aux["PosX (m)"] = savgol_filter(df["PosX (m)"], window_length=window_size, polyorder=order)
 
-        if len(df["PosY (cm)"] >= window_size):
-            df_aux["PosY (cm)"] = savgol_filter(df["PosY (cm)"], window_length=window_size, polyorder=order)
+        if len(df["PosY (m)"]) >= window_size:
+            df_aux["PosY (m)"] = savgol_filter(df["PosY (m)"], window_length=window_size, polyorder=order)
 
-        df_export = df_aux[["Tiempo (s)", "PosX (cm)", "PosY (cm)"]]
+        df_export = df_aux[["Tiempo (s)", "PosX (m)", "PosY (m)"]]
         salida_csv = os.path.join(carpeta_pos_filtrado, f"{nombre_base} Filtrado.csv")
         df_export.to_csv(salida_csv, index = False)
         print(f"Generado: {salida_csv}")
@@ -85,8 +85,8 @@ for archivo_csv in os.listdir(carpeta_pos_filtrado):
         })
 
         # Calcular velocidades
-        df_aux["velX (m/s)"] = calculate_derivative(df["PosX (cm)"], df["Tiempo (s)"])
-        df_aux["velY (m/s)"] = calculate_derivative(df["PosY (cm)"], df["Tiempo (s)"])
+        df_aux["velX (m/s)"] = calculate_derivative(df["PosX (m)"], df["Tiempo (s)"])
+        df_aux["velY (m/s)"] = calculate_derivative(df["PosY (m)"], df["Tiempo (s)"])
 
         # Crear nuevo DataFrame para exportar
         df_export = df_aux[["Tiempo (s)", "velX (m/s)", "velY (m/s)"]]
@@ -119,10 +119,10 @@ for archivo_csv in os.listdir(carpeta_vel_sin_filtrar):
             "Tiempo (s)": df["Tiempo (s)"]
         })
 
-        if len(df["velX (m/s)"] >= window_size):
+        if len(df["velX (m/s)"]) >= window_size:
             df_aux["velX (m/s)"] = savgol_filter(df["velX (m/s)"], window_length=window_size, polyorder=order)
 
-        if len(df["velY (m/s)"] >= window_size):
+        if len(df["velY (m/s)"]) >= window_size:
             df_aux["velY (m/s)"] = savgol_filter(df["velY (m/s)"], window_length=window_size, polyorder=order)
 
         df_export = df_aux[["Tiempo (s)", "velX (m/s)", "velY (m/s)"]]
@@ -194,10 +194,10 @@ for archivo_csv in os.listdir(carpeta_ace_sin_filtrar):
             "Tiempo (s)": df["Tiempo (s)"]
         })
 
-        if len(df["aceX (m/s^2)"] >= window_size):
+        if len(df["aceX (m/s^2)"]) >= window_size:
             df_aux["aceX (m/s^2)"] = savgol_filter(df["aceX (m/s^2)"], window_length=window_size, polyorder=order)
 
-        if len(df["aceY (m/s^2)"] >= window_size):
+        if len(df["aceY (m/s^2)"]) >= window_size:
             df_aux["aceY (m/s^2)"] = savgol_filter(df["aceY (m/s^2)"], window_length=window_size, polyorder=order)
 
         df_export = df_aux[["Tiempo (s)", "aceX (m/s^2)", "aceY (m/s^2)"]]
@@ -270,14 +270,112 @@ for archivo_csv in os.listdir(carpeta_int_sin_filtrar):
             "Tiempo (s)": df["Tiempo (s)"]
         })
         
-        if len(df["Aceleracion Normal (m/s^2)"] >= window_size):
+        if len(df["Aceleracion Normal (m/s^2)"]) >= window_size:
             df_aux["Aceleracion Normal (m/s^2)"] = savgol_filter(df["Aceleracion Normal (m/s^2)"], window_length=window_size, polyorder=order)
 
-        if len(df["Aceleracion Tangencial (m/s^2)"] >= window_size):
+        if len(df["Aceleracion Tangencial (m/s^2)"]) >= window_size:
             df_aux["Aceleracion Tangencial (m/s^2)"] = savgol_filter(df["Aceleracion Tangencial (m/s^2)"], window_length=window_size, polyorder=order)
 
         df_export = df_aux[["Tiempo (s)", "Aceleracion Normal (m/s^2)", "Aceleracion Tangencial (m/s^2)"]]
         salida_csv = os.path.join(carpeta_int_filtrado, f"{nombre_base} Filtrado.csv")
+        df_export.to_csv(salida_csv, index = False)
+
+        print(f"Generado: {salida_csv}")
+
+    except Exception as e:
+        print(f"Error suavizando el archivo: {archivo_csv}: {e}")
+        continue
+
+#-----------------------------------------------------------
+#                   Calcular fuerzas
+#-----------------------------------------------------------
+
+masa = 0.015 # Masa del objeto en kilogramos
+kelast = 8.13
+mud = 0.3
+
+carpeta_fuerzas = os.path.join(carpeta_resultados, "Fuerzas")
+carpeta_fuerzas_sin_filtrar = os.path.join(carpeta_fuerzas, "Sin Filtrar")
+carpeta_fuerzas_filtrado = os.path.join(carpeta_fuerzas, "Filtrado")
+
+os.makedirs(carpeta_fuerzas_filtrado, exist_ok=True)
+os.makedirs(carpeta_fuerzas_sin_filtrar, exist_ok=True)
+
+for archivo_csv in os.listdir(carpeta_ace_filtrado):
+    ruta_csv = os.path.join(carpeta_ace_filtrado, archivo_csv)
+    nombre_base = os.path.splitext(archivo_csv)[0]
+    try:
+        # Leer archivo original
+        df = pd.read_csv(ruta_csv)
+
+        if df.empty:
+            print(f"Archivo sin datos: {archivo_csv}")
+            continue
+
+        df_aux = pd.DataFrame({
+            "Tiempo (s)": df["Tiempo (s)"]
+        })
+
+        df_pos = pd.read_csv(os.path.join(carpeta_pos_filtrado, nombre_base.replace("A_", "P_")+".csv"))
+        df_vel = pd.read_csv(os.path.join(carpeta_vel_filtrado, nombre_base.replace("A_", "V_")+".csv"))
+
+        # Calcular fuerzas
+        df_aux["FuerzaX (N)"] = masa * df["aceX (m/s^2)"]
+        df_aux["FuerzaY (N)"] = masa * df["aceY (m/s^2)"]
+        df_aux["FuerzaElastica (N)"] = - kelast * df_pos[["PosX (m)"]]
+        df_aux["FuerzaNormal (N)"] = df_aux["FuerzaY (N)"] + masa * 9.8
+        signo_velocidad = np.sign(df_vel["velX (m/s)"])
+        df_aux["FuerzaRozamiento (N)"] = -signo_velocidad * mud * df_aux["FuerzaNormal (N)"]
+
+        # Crear nuevo DataFrame para exportar
+        df_export = df_aux[["Tiempo (s)", "FuerzaX (N)", "FuerzaY (N)", "FuerzaElastica (N)", "FuerzaNormal (N)", "FuerzaRozamiento (N)"]]
+        
+        #Eliminar los NaN del dataframe
+        df_export = df_export.bfill()
+
+        # Guardar como nuevo archivo
+        nombre_limpio = nombre_base.replace(" Filtrado", "").replace("A_", "F_")
+        salida_csv = os.path.join(carpeta_fuerzas_sin_filtrar, f"{nombre_limpio}.csv")
+        df_export.to_csv(salida_csv, index=False)
+
+        print(f"Generado: {salida_csv}")
+
+    except Exception as e:
+        print(f"Error procesando {archivo_csv}: {e}")
+        continue
+
+#Suavizar fuerzas
+for archivo_csv in os.listdir(carpeta_fuerzas_sin_filtrar):
+    ruta_csv = os.path.join(carpeta_fuerzas_sin_filtrar, archivo_csv)
+    nombre_base = os.path.splitext(archivo_csv)[0]
+    try:
+        df = pd.read_csv(ruta_csv)
+        if df.empty:
+            print(f"Archivo sin datos: {archivo_csv}")
+            continue
+
+        df_aux = pd.DataFrame({
+            "Tiempo (s)": df["Tiempo (s)"]
+        })
+        
+        if len(df["FuerzaX (N)"]) >= window_size:
+            df_aux["FuerzaX (N)"] = savgol_filter(df["FuerzaX (N)"], window_length=window_size, polyorder=order)
+
+        if len(df["FuerzaY (N)"]) >= window_size:
+            df_aux["FuerzaY (N)"] = savgol_filter(df["FuerzaY (N)"], window_length=window_size, polyorder=order)
+
+        if len(df["FuerzaElastica (N)"]) >= window_size:
+            df_aux["FuerzaElastica (N)"] = savgol_filter(df["FuerzaElastica (N)"], window_length=window_size, polyorder=order)
+
+        if len(df["FuerzaNormal (N)"]) >= window_size:
+            df_aux["FuerzaNormal (N)"] = savgol_filter(df["FuerzaNormal (N)"], window_length=window_size, polyorder=order)
+
+        if len(df["FuerzaRozamiento (N)"]) >= window_size:
+            df_aux["FuerzaRozamiento (N)"] = savgol_filter(df["FuerzaRozamiento (N)"], window_length=window_size, polyorder=order)
+
+
+        df_export = df_aux[["Tiempo (s)", "FuerzaX (N)", "FuerzaY (N)", "FuerzaElastica (N)", "FuerzaNormal (N)", "FuerzaRozamiento (N)"]]
+        salida_csv = os.path.join(carpeta_fuerzas_filtrado, f"{nombre_base} Filtrado.csv")
         df_export.to_csv(salida_csv, index = False)
 
         print(f"Generado: {salida_csv}")

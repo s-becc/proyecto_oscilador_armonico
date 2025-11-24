@@ -16,6 +16,7 @@ if __name__ == "__main__":
         "ProcesarVideos.py",
         "ProcesarDatos.py",
         "Graficador.py",
+        "Graficador2.py",
         "GenerarIndex.py"
     ]
 

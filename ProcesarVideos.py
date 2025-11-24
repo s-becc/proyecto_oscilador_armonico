@@ -19,7 +19,7 @@ def click_event(event, x, y, flags, params):
             print(f"Escala calculada: {px_to_cm:.5f} cm/px")
             params['px_to_cm'] = px_to_cm
 
-altura = 1.6 #Altura en cm del objeto de referencia, en este caso el clavo
+altura = 0.016 #Altura en m del objeto de referencia, en este caso el clavo
 
 #Definir directorios
 dir = os.path.dirname(__file__)
@@ -110,8 +110,12 @@ for v in videos:
         time_index = results[:, 0]
         x = results[:, 1]
         y = results[:, 2]
-        results_matrix = np.column_stack((time_index, x, y))
-        header = "Tiempo (s),PosX (cm),PosY (cm)"
+        x_inicial = x[0]
+        y_inicial = y[0]
+        x_centrado = x - x_inicial
+        y_centrado = y - y_inicial
+        results_matrix = np.column_stack((time_index, x_centrado, y_centrado))
+        header = "Tiempo (s),PosX (m),PosY (m)"
 
         np.savetxt(
             rutaSalida,

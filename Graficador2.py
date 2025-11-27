@@ -43,6 +43,13 @@ for video in os.listdir(videos):
         shared_xaxes= True
     )
 
+    figEnergiaTrabajo = make_subplots(
+        rows = 2,
+        cols = 1,
+        subplot_titles = ("Energia", "Trabajo"),
+        shared_xaxes= True
+    )
+
     for file in files:
         if nombre in file:
             if "Sin Filtrar" in file:
@@ -224,6 +231,69 @@ for video in os.listdir(videos):
                         name = 'F. Normal',
                         line = dict(dash='dot')
                     ), row = 2, col = 1)
+                elif "Trabajo y energia" in file:
+                    if "E_" in file:
+                        # Archivo de energia
+                        df = pd.read_csv(file)
+                        tiempo = df.iloc[:, 0]
+
+                        # Datos para Ejes
+                        ECinetica = df["Energia Cinetica (J)"]
+                        EPE = df["Energia Potencial Elastica (J)"]
+                        EM = df["Energia Mecanica Total (J)"]
+                        dK = df["Delta K (J)"]
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = ECinetica,
+                            mode = 'lines',
+                            name = 'Energica Cinetica'
+                        ), row = 1, col = 1)
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = EPE,
+                            mode = 'lines',
+                            name = 'Energica Potencial Elastica'
+                        ), row = 1, col = 1)
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = EM,
+                            mode = 'lines',
+                            name = 'Energica Mecanica'
+                        ), row = 1, col = 1)
+
+                    
+                    elif "T_" in file:
+                        df = pd.read_csv(file)
+                        tiempo = df.iloc[:, 0]
+
+                        # Datos para Ejes
+                        TrabajoNeto = df["Trabajo Neto Acumulado (J)"]
+                        TrabajoElastico = df["Trabajo Elastico Acumulado (J)"]
+                        TrabajoRozamiento = df["Trabajo Rozamiento Acumulado (J)"]
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = TrabajoNeto,
+                            mode = 'lines',
+                            name = 'Trabajo Neto Acumulado'
+                        ), row = 2, col = 1)
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = TrabajoElastico,
+                            mode = 'lines',
+                            name = 'Trabajo Elastico Acumulado'
+                        ), row = 2, col = 1)
+
+                        figEnergiaTrabajo.add_trace(go.Scatter(
+                            x = tiempo,
+                            y = TrabajoRozamiento,
+                            mode = 'lines',
+                            name = 'Trabajo Rozamiento Acumulado'
+                        ), row = 2, col = 1)
 
     carpeta_graficos = os.path.join(dir, "Resultados", "Graficos")
     os.makedirs(carpeta_graficos, exist_ok = True)
@@ -234,13 +304,7 @@ for video in os.listdir(videos):
     figY.write_image(f"{ruta_salida}Y.png")
     figFuerzas.write_html(f"{ruta_salida}Fuerzas.html")
     figFuerzas.write_image(f"{ruta_salida}Fuerzas.png")
-
-
-
-
-
-
-
-
+    figEnergiaTrabajo.write_html(f"{ruta_salida}EnergiaTrabajo.html")
+    figEnergiaTrabajo.write_image(f"{ruta_salida}EnergiaTrabajo.png")
 
     

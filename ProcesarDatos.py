@@ -13,8 +13,8 @@ def calculate_derivative(x, t):
     t = pd.Series(t)
 
     # Derivar posición suavizada para obtener velocidad
-    delta_x = x.diff(periods=2)
-    delta_t = t.diff(periods=2)
+    delta_x = x.diff(periods=1)
+    delta_t = t.diff(periods=1)
     
     derivative = delta_x / delta_t
 
@@ -382,4 +382,112 @@ for archivo_csv in os.listdir(carpeta_fuerzas_sin_filtrar):
 
     except Exception as e:
         print(f"Error suavizando el archivo: {archivo_csv}: {e}")
+        continue
+
+#-----------------------------------------------------------
+#               Calcular trabajo y energia
+#-----------------------------------------------------------
+
+carpeta_trabajo = os.path.join(carpeta_resultados, "Trabajo y energia")
+os.makedirs(carpeta_trabajo, exist_ok = True)
+
+for archivo_csv in os.listdir(carpeta_fuerzas_filtrado):
+    ruta_fuerzas = os.path.join(carpeta_fuerzas_filtrado, archivo_csv)
+    nombre_base_fuerzas = os.path.splitext(archivo_csv)[0]
+    
+    try:
+        # Leer el DataFrame de Fuerzas Filtradas
+        df_fuerzas = pd.read_csv(ruta_fuerzas)
+
+        # Determinar nombres de archivos auxiliares
+        nombre_base_pos = nombre_base_fuerzas.replace("F_", "P_").replace(" Filtrado", "")
+        nombre_base_vel = nombre_base_fuerzas.replace("F_", "V_").replace(" Filtrado", "")
+
+        # Cargar DataFrames auxiliares necesarios (Posición y Velocidad Filtrada)
+        ruta_pos = os.path.join(carpeta_pos_filtrado, f"{nombre_base_pos} Filtrado.csv")
+        ruta_vel = os.path.join(carpeta_vel_filtrado, f"{nombre_base_vel} Filtrado.csv")
+        
+        df_pos = pd.read_csv(ruta_pos)
+        df_vel = pd.read_csv(ruta_vel)
+
+        df_aux = df_fuerzas.copy()
+
+        # ------------------- 1. CÁLCULO DE DESPLAZAMIENTOS -------------------
+        # Calcular la variación de posición (dx) en metros
+        # Asumimos que df_pos["PosX (m)"] contiene la posición en metros
+        df_aux['dx (m)'] = df_pos['PosX (m)'].diff().fillna(0)
+        
+        # ------------------- 2. CÁLCULO DE ENERGÍA -------------------
+
+        # Energía Cinética (K = 0.5 * m * v^2)
+        v_mod_sq = df_vel['velX (m/s)']**2 + df_vel['velY (m/s)']**2
+        df_aux['Energia Cinetica (J)'] = 0.5 * masa * v_mod_sq
+        
+        # Energía Potencial Elástica (U = 0.5 * k * x^2)
+        df_aux['PosX (m)'] = df_pos['PosX (m)'] # Posición ya está centrada y en metros
+        df_aux['Energia Potencial Elastica (J)'] = 0.5 * kelast * df_aux['PosX (m)']**2
+        
+        # Energía Mecánica Total (E = K + U)
+        df_aux['Energia Mecanica Total (J)'] = df_aux['Energia Cinetica (J)'] + df_aux['Energia Potencial Elastica (J)']
+
+        # ------------------- 3. CÁLCULO DE TRABAJO INSTANTÁNEO -------------------
+        
+        # Trabajo instantáneo (dW = F * dx)
+        
+        # Trabajo Neto (W_Neto = F_neta_X * dx)
+        df_aux['Trabajo Neto (J)'] = df_aux['FuerzaX (N)'] * df_aux['dx (m)']
+        
+        # Trabajo Elástico (W_Elastica = F_Elastica * dx)
+        df_aux['Trabajo Elastico (J)'] = df_aux['FuerzaElastica (N)'] * df_aux['dx (m)']
+        
+        # Trabajo de Rozamiento (W_Rozamiento = F_Rozamiento * dx)
+        df_aux['Trabajo Rozamiento (J)'] = df_aux['FuerzaRozamiento (N)'] * df_aux['dx (m)']
+
+        # ------------------- 4. TRABAJO ACUMULADO (INTEGRAL) -------------------
+
+        # El trabajo acumulado se calcula con la suma acumulada (cumsum)
+        df_aux['Trabajo Neto Acumulado (J)'] = df_aux['Trabajo Neto (J)'].cumsum()
+        df_aux['Trabajo Elastico Acumulado (J)'] = df_aux['Trabajo Elastico (J)'].cumsum()
+        df_aux['Trabajo Rozamiento Acumulado (J)'] = df_aux['Trabajo Rozamiento (J)'].cumsum()
+
+        # ------------------- 5. VALIDACIÓN (TEOREMA W-K) -------------------
+        
+        # Delta K (Cambio en la energía cinética)
+        df_aux['Delta K (J)'] = df_aux['Energia Cinetica (J)'].diff().fillna(0)
+
+        # ------------------- 6. EXPORTAR RESULTADOS -------------------
+        
+        columnas_trabajo = [
+            'Tiempo (s)', 
+            'Trabajo Neto Acumulado (J)',
+            'Trabajo Elastico Acumulado (J)',
+            'Trabajo Rozamiento Acumulado (J)'
+        ]
+
+        columnas_energia = [
+            'Tiempo (s)',
+            'Energia Cinetica (J)', 
+            'Energia Potencial Elastica (J)', 
+            'Energia Mecanica Total (J)',
+            'Delta K (J)' # Para la validación W_Neto vs Delta K
+        ]
+
+        df_export = df_aux[columnas_trabajo]
+        
+        # Guardar el nuevo archivo CSV de Trabajo
+        nombre_fuerza = nombre_base_fuerzas.replace("F_", "T_")
+        salida_csv = os.path.join(carpeta_trabajo, f"{nombre_fuerza}.csv")
+        df_export.to_csv(salida_csv, index=False)
+
+        df_export = df_aux[columnas_energia]
+
+        #Guardar el nuevo archivo CSV de Energia
+        nombre_energia = nombre_base_fuerzas.replace("F_", "E_")
+        salida_csv = os.path.join(carpeta_trabajo, f"{nombre_energia}.csv")
+        df_export.to_csv(salida_csv, index = False)
+        
+        print(f"Generado: {salida_csv}")
+    
+    except Exception as e:
+        print(f"Error calculando Trabajo y Energía para {archivo_csv}: {e}")
         continue

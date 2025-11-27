@@ -13,8 +13,8 @@ def calculate_derivative(x, t):
     t = pd.Series(t)
 
     # Derivar posición suavizada para obtener velocidad
-    delta_x = x.diff(periods=1)
-    delta_t = t.diff(periods=1)
+    delta_x = x.diff(periods=2)
+    delta_t = t.diff(periods=2)
     
     derivative = delta_x / delta_t
 
@@ -85,8 +85,8 @@ for archivo_csv in os.listdir(carpeta_pos_filtrado):
         })
 
         # Calcular velocidades
-        df_aux["velX (m/s)"] = calculate_derivative(df["PosX (m)"], df["Tiempo (s)"])
-        df_aux["velY (m/s)"] = calculate_derivative(df["PosY (m)"], df["Tiempo (s)"])
+        df_aux["velX (m/s)"] = np.gradient(df["PosX (m)"], df["Tiempo (s)"])
+        df_aux["velY (m/s)"] = np.gradient(df["PosY (m)"], df["Tiempo (s)"])
 
         # Crear nuevo DataFrame para exportar
         df_export = df_aux[["Tiempo (s)", "velX (m/s)", "velY (m/s)"]]
@@ -160,8 +160,8 @@ for archivo_csv in os.listdir(carpeta_vel_filtrado):
         })
 
         # Calcular velocidades
-        df_aux["aceX (m/s^2)"] = calculate_derivative(df["velX (m/s)"], df["Tiempo (s)"])
-        df_aux["aceY (m/s^2)"] = calculate_derivative(df["velY (m/s)"], df["Tiempo (s)"])
+        df_aux["aceX (m/s^2)"] = np.gradient(df["velX (m/s)"], df["Tiempo (s)"])
+        df_aux["aceY (m/s^2)"] = np.gradient(df["velY (m/s)"], df["Tiempo (s)"])
 
         # Crear nuevo DataFrame para exportar
         df_export = df_aux[["Tiempo (s)", "aceX (m/s^2)", "aceY (m/s^2)"]]
@@ -240,7 +240,7 @@ for archivo_ace in os.listdir(carpeta_ace_filtrado):
 
     #Calcular la aceleracion tangencial
 
-    a_tangencial = calculate_derivative(v_mod, df_vel["Tiempo (s)"])
+    a_tangencial = np.gradient(v_mod, df_vel["Tiempo (s)"])
 
     df_export = pd.DataFrame({
         "Tiempo (s)": df_vel["Tiempo (s)"],

@@ -15,11 +15,11 @@ def click_event(event, x, y, flags, params):
             dist = np.linalg.norm(np.array(points[0]) - np.array(points[1]))
             print(f"Distancia en píxeles: {dist}")
             # Calcula la escala y muestra
-            px_to_cm = altura / dist
+            px_to_cm = referencia / dist
             print(f"Escala calculada: {px_to_cm:.5f} cm/px")
             params['px_to_cm'] = px_to_cm
 
-altura = 0.016 #Altura en m del objeto de referencia, en este caso el clavo
+referencia = 0.3 #Largo en metros de la tabla que se usa de base
 
 #Definir directorios
 dir = os.path.dirname(__file__)
@@ -37,6 +37,7 @@ for v in videos:
     points = []
     params = {}
     if ret:
+        cv2.namedWindow("Medir", cv2.WINDOW_NORMAL)
         cv2.imshow("Medir", frame)
         cv2.setMouseCallback("Medir", click_event, params)
         print("Haz clic en los dos extremos del objeto de referencia.")
@@ -67,8 +68,8 @@ for v in videos:
 
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        lower_range = np.array([39, 95, 0])
-        upper_range = np.array([133, 255, 255]) 
+        lower_range = np.array([0, 203, 76])
+        upper_range = np.array([55, 255, 255])
 
         mask = cv2.inRange(hsv, lower_range, upper_range)
 
@@ -110,10 +111,10 @@ for v in videos:
         time_index = results[:, 0]
         x = results[:, 1]
         y = results[:, 2]
-        x_inicial = x[0]
-        y_inicial = y[0]
-        x_centrado = x - x_inicial
-        y_centrado = y - y_inicial
+        x_final = x[0]
+        y_final = y[0]
+        x_centrado = x - x_final
+        y_centrado = y - y_final
         results_matrix = np.column_stack((time_index, x_centrado, y_centrado))
         header = "Tiempo (s),PosX (m),PosY (m)"
 
@@ -125,77 +126,3 @@ for v in videos:
             comments="",
             fmt="%.4f"
         )
-    
-    # # 3️⃣ Procesar posiciones
-    # positions = np.array(positions, dtype=float)
-
-    # if positions.shape[0] == 0:
-    #     print("No se detectaron posiciones. Verifica el video o los parámetros de detección.")
-    #     exit()
-
-    # y_positions = positions[:, 1]  # solo componente vertical
-
-    # # Convertir a centímetros
-    # y_positions = y_positions * px_to_cm
-
-    # # Amplitud y equilibrio
-    # A = (np.max(y_positions) - np.min(y_positions)) / 2
-    # y_equilibrium = (np.max(y_positions) + np.min(y_positions)) / 2
-    # y_positions = y_positions - y_equilibrium  # centrar en el equilibrio
-
-    # # Tiempo
-    # t = np.arange(len(positions)) * dt
-
-    # # 4️⃣ Ajuste senoidal
-    # def sine_wave(t, omega, phase):
-    #     return A * np.cos(omega * t + phase)
-
-    # popt, _ = curve_fit(sine_wave, t, y_positions, p0=[2*np.pi, 0])
-    # omega, phase = popt
-
-    # # Curvas teóricas
-    # y_theoretical = A * np.cos(omega * t + phase)
-    # v_theoretical = -A * omega * np.sin(omega * t + phase)
-    # a_theoretical = -A * omega**2 * np.cos(omega * t + phase)
-
-    # # 5️⃣ Derivadas numéricas
-    # v_numeric = np.gradient(y_positions, dt)      # cm/s
-    # a_numeric = np.gradient(v_numeric, dt)        # cm/s²
-
-    # # 6️⃣ Gráficas
-    # plt.figure(figsize=(12, 10))
-
-    # # Posición
-    # plt.subplot(3,1,1)
-    # plt.plot(t, y_positions, 'b.', label='Datos obsservados', alpha=0.6)
-    # plt.plot(t, y_theoretical, 'r-', label='Posicion teórica')
-    # plt.ylabel('Posición [cm]')
-    # plt.title('Movimiento Armónico Simple')
-    # plt.legend()
-    # plt.grid(True)
-
-    # # Velocidad
-    # plt.subplot(3,1,2)
-    # plt.plot(t, v_numeric, 'b.', alpha=0.6, label='Datos observados')
-    # plt.plot(t, v_theoretical, 'g-', label='Velocidad teórica')
-    # plt.ylabel('Velocidad [cm/s]')
-    # plt.legend()
-    # plt.grid(True)
-
-    # # Aceleración
-    # plt.subplot(3,1,3)
-    # plt.plot(t, a_numeric, 'b.', alpha=0.6, label='Datos observados')
-    # plt.plot(t, a_theoretical, 'm-', label='Aceleración teórica')
-    # plt.xlabel('Tiempo [s]')
-    # plt.ylabel('Aceleración [cm/s²]')
-    # plt.legend()
-    # plt.grid(True)
-
-    # plt.tight_layout()
-    # plt.show()
-
-    # # 7️⃣ Parámetros
-    # print(f"Amplitud: {A:.2f} cm")
-    # print(f"Frecuencia angular ω: {omega:.2f} rad/s")
-    # print(f"Frecuencia f: {omega/(2*np.pi):.2f} Hz")
-    # print(f"Período T: {2*np.pi/omega:.2f} s")

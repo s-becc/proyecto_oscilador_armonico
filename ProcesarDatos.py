@@ -435,13 +435,13 @@ for archivo_csv in os.listdir(carpeta_fuerzas_filtrado):
         # Trabajo instantáneo (dW = F * dx)
         
         # Trabajo Neto (W_Neto = F_neta_X * dx)
-        df_aux['Trabajo Neto (J)'] = df_aux['FuerzaX (N)'] * df_aux['dx (m)']
+        df_aux['Trabajo Neto (J)'] = ((df_aux['FuerzaX (N)'] + df_aux['FuerzaX (N)'].shift(1)) / 2) * df_aux['dx (m)']
         
         # Trabajo Elástico (W_Elastica = F_Elastica * dx)
-        df_aux['Trabajo Elastico (J)'] = df_aux['FuerzaElastica (N)'] * df_aux['dx (m)']
+        df_aux['Trabajo Elastico (J)'] = ((df_aux['FuerzaElastica (N)'] + df_aux["FuerzaElastica (N)"].shift(1)) / 2) * df_aux['dx (m)']
         
         # Trabajo de Rozamiento (W_Rozamiento = F_Rozamiento * dx)
-        df_aux['Trabajo Rozamiento (J)'] = df_aux['FuerzaRozamiento (N)'] * df_aux['dx (m)']
+        df_aux['Trabajo Rozamiento (J)'] = ((df_aux['FuerzaRozamiento (N)'] + df_aux['FuerzaRozamiento (N)'].shift(1)) / 2) * df_aux['dx (m)']
 
         # ------------------- 4. TRABAJO ACUMULADO (INTEGRAL) -------------------
 

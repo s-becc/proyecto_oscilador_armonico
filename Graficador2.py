@@ -154,6 +154,7 @@ for video in os.listdir(videos):
                         mode = 'lines',
                         name = 'Aceleracion Filtrada'
                     ), row = 2, col = 1)
+
                 elif "Aceleracion Cartesiana" in file:
                     # Aceleracion Filtrada de cada video
                     df = pd.read_csv(file)
@@ -270,9 +271,9 @@ for video in os.listdir(videos):
                         tiempo = df.iloc[:, 0]
 
                         # Datos para Ejes
-                        TrabajoNeto = df["Trabajo Neto Acumulado (J)"]
-                        TrabajoElastico = df["Trabajo Elastico Acumulado (J)"]
-                        TrabajoRozamiento = df["Trabajo Rozamiento Acumulado (J)"]
+                        TrabajoNeto = df["Trabajo Neto (J)"]
+                        TrabajoElastico = df["Trabajo Elastico (J)"]
+                        TrabajoRozamiento = df["Trabajo Rozamiento (J)"]
 
                         figEnergiaTrabajo.add_trace(go.Scatter(
                             x = tiempo,

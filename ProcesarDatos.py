@@ -436,7 +436,8 @@ for archivo_csv in os.listdir(carpeta_fuerzas_filtrado):
         
         # Trabajo Neto (W_Neto = F_neta_X * dx)
         df_aux['Trabajo Neto (J)'] = ((df_aux['FuerzaX (N)'] + df_aux['FuerzaX (N)'].shift(1)) / 2) * df_aux['dx (m)']
-        
+
+
         # Trabajo Elástico (W_Elastica = F_Elastica * dx)
         df_aux['Trabajo Elastico (J)'] = ((df_aux['FuerzaElastica (N)'] + df_aux["FuerzaElastica (N)"].shift(1)) / 2) * df_aux['dx (m)']
         
@@ -461,7 +462,10 @@ for archivo_csv in os.listdir(carpeta_fuerzas_filtrado):
             'Tiempo (s)', 
             'Trabajo Neto Acumulado (J)',
             'Trabajo Elastico Acumulado (J)',
-            'Trabajo Rozamiento Acumulado (J)'
+            'Trabajo Rozamiento Acumulado (J)',
+            'Trabajo Neto (J)',
+            'Trabajo Elastico (J)',
+            'Trabajo Rozamiento (J)'
         ]
 
         columnas_energia = [

@@ -111,8 +111,8 @@ for v in videos:
         time_index = results[:, 0]
         x = results[:, 1]
         y = results[:, 2]
-        x_final = x[0]
-        y_final = y[0]
+        x_final = x[-1]
+        y_final = y[-1]
         x_centrado = x - x_final
         y_centrado = y - y_final
         results_matrix = np.column_stack((time_index, x_centrado, y_centrado))
